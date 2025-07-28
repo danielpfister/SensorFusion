@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import torch
 from kitti_utils import *
+import pymap3d as pm
 
 
 def get_uvz_centers(image, velo_uvz, bboxes, draw=True):
@@ -137,3 +138,34 @@ def get_imu_xyz(image, bin_path, model, T_velo_cam, T_cam_imu):
      imu_xyz = transform_uvz(uvz, T_cam_imu)
       
      return imu_xyz
+
+def imu2geodetic(x, y, z, lat0, lon0, alt0, heading0):
+    ''' Converts cartesian IMU coordinates to Geodetic based on current 
+        location. This function works with x,y,z as vectors and lat0, lon0, 
+        alt0 as scalars.
+
+        - Correct orientation is provided by the heading
+        - The Elevation must be corrected for pymap3d (i.e. 180 is 0 elevation)
+        Inputs:
+            x - IMU x-coodinate (either scaler of (Nx1) array)
+            y - IMU y-coodinate (either scaler of (Nx1) array)
+            z - IMU z-coodinate (either scaler of (Nx1) array)
+            lat0 - initial Latitude in degrees
+            lon0 - initial Longitude in degrees
+            alt0 - initial Ellipsoidal Altitude in meters
+            heading0 - initial heading in radians (0 - East, positive CCW)
+        Outputs:
+            lla - (Nx3) numpy array of 
+        '''
+    # convert to RAE
+    rng = np.sqrt(x**2 + y**2 + z**2)
+    az = np.degrees(np.arctan2(y, x)) + np.degrees(heading0)
+    el = np.degrees(np.arctan2(np.sqrt(x**2 + y**2), z)) + 90 
+    
+    # convert to geodetic
+    lla = pm.aer2geodetic(az, el, rng, lat0, lon0, alt0)
+
+    # convert to numpy array
+    lla = np.vstack((lla[0], lla[1], lla[2])).T
+
+    return lla
