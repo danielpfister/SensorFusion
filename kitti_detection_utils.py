@@ -160,7 +160,7 @@ def imu2geodetic(x, y, z, lat0, lon0, alt0, heading0):
     # convert to RAE
     rng = np.sqrt(x**2 + y**2 + z**2)
     az = np.degrees(np.arctan2(y, x)) + np.degrees(heading0)
-    el = np.degrees(np.arctan2(np.sqrt(x**2 + y**2), z)) + 90 
+    el = np.degrees(np.arctan2(np.sqrt(x**2 + y**2), z)) + 90
     
     # convert to geodetic
     lla = pm.aer2geodetic(az, el, rng, lat0, lon0, alt0)
